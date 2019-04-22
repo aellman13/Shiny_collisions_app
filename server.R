@@ -1,13 +1,13 @@
 
 server <- function(input, output){ 
     
-    col_sample = sample(x = collisions$`UNIQUE KEY`, size = 2000, replace = F)    
+    col_sample = sample(x = collisions$`UNIQUE KEY`, size = 20000, replace = F)    
     
     filtered1 = reactive({
-        
             collisions %>%
             filter(collisions$`UNIQUE KEY` %in% col_sample,
-                   Weekend %in% input$radio, 
+                   if (input$radio == 'All'){ Weekend == 'Weekend' | Weekend== 'Weekday'
+                   } else{Weekend == input$radio}, 
                    between(x = hour(TIME), lower = input$time_slider[1],
                                             upper = input$time_slider[2]),
                     between(x = DATE, lower = input$dates[1],
@@ -19,15 +19,29 @@ server <- function(input, output){
          leaflet(data = collisions) %>%
             addProviderTiles("OpenStreetMap.Mapnik") %>%
             setView(lng=-73.935242, lat=40.730610 , zoom=11)
-            
+        
+     
     })
+    
     observe(
         leafletProxy("map", data = filtered1()) %>% 
-            clearMarkers() %>% 
-        addMarkers()
-                    
-        
-     )
+            clearMarkerClusters() %>% 
+            addMarkers(clusterOptions = markerClusterOptions())
+    )
+    observe(
+    output$topFactor <- DT::renderDataTable(
+        filtered1() %>% 
+            group_by(`VEHICLE 1 FACTOR`) %>% 
+            summarise(n = n()) %>% 
+            arrange(desc(n))
+    ))
+    
+    output$Danger_hours <- renderInfoBox({
+        infoBox(title = 'Most Dangerous Time Zone', 
+                value = '2:00 - 8:00 PM',
+                icon = icon("far fa-clock"),
+                color = "blue")
+        })
     
     #### Charts ####
     
