@@ -1,20 +1,26 @@
 
 server <- function(input, output){ 
     
-    col_sample = sample(x = collisions$`UNIQUE KEY`, size = 20000, replace = F)    
+      
     
-    filtered1 = reactive({
-            collisions %>%
-            filter(collisions$`UNIQUE KEY` %in% col_sample,
-                   if (input$radio == 'All'){ Weekend == 'Weekend' | Weekend== 'Weekday'
-                   } else{Weekend == input$radio}, 
-                   between(x = hour(TIME), lower = input$time_slider[1],
-                                            upper = input$time_slider[2]),
-                    between(x = DATE, lower = input$dates[1],
-                                        upper = input$dates[2]))
+    
+    # Data Table for Leaflet Proxy Map
+    col_sample = reactive({
+        sample(x = collisions$UNIQUE.KEY, size = input$sample, replace = F)  
     })
-
-
+    
+    # filtered1 = reactive({
+    #         collisions %>%
+    #         filter(UNIQUE.KEY %in% col_sample,
+    #                if (input$radio == 'All'){ Weekend == 'Weekend' | Weekend== 'Weekday'
+    #                } else{Weekend == input$radio},
+    #                between(x = lubridate::hour(TIME), left = input$time_slider[1],
+    #                                         right = input$time_slider[2]),
+    #                 between(x = DATE, left = input$dates[1],
+    #                                     right = input$dates[2]))
+    # })
+   
+    # Initial Map
     output$map <- renderLeaflet({
          leaflet(data = collisions) %>%
             addProviderTiles("OpenStreetMap.Mapnik") %>%
@@ -23,44 +29,72 @@ server <- function(input, output){
      
     })
     
+    # Leaflet Proxy - Markers
     observe(
-        leafletProxy("map", data = filtered1()) %>% 
+        leafletProxy("map", data = collisions %>% 
+                                        filter(UNIQUE.KEY %in% col_sample(),
+                                               if (input$radio_transport == 'All'){ transport == 'Pedestrian' | 
+                                                                                    transport== 'Cyclist'| 
+                                                                                    transport== 'Motorist'
+                                               } else{transport == input$radio_transport},
+                                          if (input$radio_weekend == 'All'){ Weekend == 'Weekend' | Weekend== 'Weekday'
+                                          } else{Weekend == input$radio_weekend},
+                                          between(x = lubridate::hour(TIME), left = input$time_slider[1],
+                                                  right = input$time_slider[2]),
+                                          between(x = DATE, left = input$dates[1],
+                                                  right = input$dates[2]))) %>% 
             clearMarkerClusters() %>% 
             addMarkers(clusterOptions = markerClusterOptions())
-    )
+    ) 
+    
+    # Table #1 - Tab 2 
     observe(
     output$topFactor <- DT::renderDataTable(
-        filtered1() %>% 
-            group_by(`VEHICLE 1 FACTOR`) %>% 
-            summarise(n = n()) %>% 
-            arrange(desc(n))
+        collisions %>% 
+            group_by_(input$x_axis) %>% 
+            summarise(Percent_of_Total_Collisions = round((n()/nrow(collisions))*100, 2)) %>% 
+            arrange(desc(Percent_of_Total_Collisions))
     ))
+    # Table 2 - Tab 2
+    observe(
+        output$topFill <- DT::renderDataTable(
+            collisions %>% 
+                group_by_(input$fill) %>% 
+                summarise(Percent_of_Total_Collisions = round((n()/nrow(collisions))*100, 2)) %>% 
+                arrange(desc(Percent_of_Total_Collisions))
+        ))
     
-    output$Danger_hours <- renderInfoBox({
-        infoBox(title = 'Most Dangerous Time Zone', 
-                value = '2:00 - 8:00 PM',
-                icon = icon("far fa-clock"),
-                color = "blue")
-        })
+    # output$Danger_hours <- renderInfoBox({
+    #     infoBox(value = '2-8 PM',
+    #             icon = icon("far fa-clock"),
+    #             color = "blue")
+    #     })
     
     #### Charts ####
     
+    
+    # Graph - Tab 2
     output$plot = renderPlot({
          collisions %>%
              filter(Dangerous_or_Deadly == input$D_o_D) %>%
              group_by_(input$x_axis, input$fill) %>%
-             summarize(n=n()/12) %>%
+             summarize(n=n()/12) %>% 
+             top_n(n = 8, wt = n) %>% 
              ggplot() +
-             geom_col(aes_string(x = input$x_axis, y = 'n', fill=input$fill), position='dodge') +
-            ggtitle(str_c('Average collision frequency by ', 
-                                as.character(input$x_axis), 
-                                'and ', 
-                                as.character(input$fill), 
-                                'per month')) +
+             geom_col(aes_string(x = input$x_axis, y = 'n', fill=input$fill), position = 'dodge') +
             xlab(as.character(input$x_axis)) +
-            ylab('Number of Collisions')
+            ylab('Number of Collisions') +
+            ggtitle(label = str_c('Average Monthly Collisions by ', 
+                                  as.character(input$x_axis), 
+                                  ' and ', 
+                                  as.character(input$fill))) +
+            theme_fivethirtyeight() + 
+            scale_color_fivethirtyeight() + 
+            theme(plot.title = element_text(hjust = 0.5))
          
      })
+   
+    
     
     # output$table <- DT::renderDataTable({
     #     datatable(collisions2, rownames=FALSE) %>% 

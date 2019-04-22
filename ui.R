@@ -12,40 +12,38 @@ shinyUI(
             tabItems(
                 # Map page with input selectors
                 tabItem(tabName = 'map',
-                            column(4, radioButtons("radio", label = h3("Weekend or Weekday"),
+                            column(4, radioButtons("radio_weekend", label = h3("Weekend or Weekday"),
                                                    choices = list("All" = "All", 
                                                                   "Weekday" = c('Weekday'), 
                                                                   "Weekend" = c('Weekend')), 
-                                                                  selected = 'Weekend'),
-                                   br(), 
-                                   infoBoxOutput('Danger_hours')),
-                            
+                                                                  selected = 'All'),
+                                   radioButtons("radio_transport", label = h3("Transportation Type"),
+                                                choices = list("All" = "All", 
+                                                               "Pedestrian" = c('Pedestrian'), 
+                                                               "Cyclist" = c('Cyclist'),
+                                                               "Motorist" = c('Motorist')), 
+                                                selected = 'All')),
+                                    
                             column(4, sliderInput("time_slider", label = h3("Time of Day (24 hr)"), 
-                                                  min = 0, max = 24, value = c(0,1)),
-                                        textInput(inputId = "address", 
-                                                label = "Enter a NYC Address:",
-                                                value="", 
-                                                placeholder = "e.g., 1050 Park Ave")),
+                                                  min = 0, max = 24, value = c(7,11))),
+                                        
                             column(4, dateRangeInput("dates", label = h3("Date range"), 
                                                      start = "2015-01-01",
-                                                     end = "2017-02-28")),
+                                                     end = "2015-12-28"),
+                                    br(),
+                                   
+                                        sliderInput("sample", label = 'Number of data points', min = 5000, max = 100000, value = 20000)),
                                         
-                                    # actionButton("update" , 
+                                    box(width = 12, background = 'blue', height = 15),
+                                    br(),
+                                    # actionButton("update" ,  
                                     #                 label = HTML("Update map and center<br />around provided address"), 
                                     #                 icon("refresh")),
                                     leafletOutput('map', height = 600),
                         
-                        box(width = 12, height = 100, background = 'blue')
+                        box(width = 12, height = 15, background = 'blue')
                             
-                            
-                        
-                                    
-                                    # column(3, infoBoxOutput('')),
-                                    # column(3, infoBoxOutput('')),
-                                    # column(3, infoBoxOutput(''))
                         ),
-                            #radioButtons("radio", label = h3("Radio buttons"),
-                                    #choices = list("Choice 1" = 1, "Choice 2" = 2), selected = 1),
                     
                 # Chart Pages with input selectors
                 tabItem(tabName = 'chart',
@@ -59,9 +57,20 @@ shinyUI(
                             column(4,selectizeInput(inputId = "fill", 
                                     label = 'Choose Subset Variable', 
                                     choices = x1$x)),
+                        br(),
+                        
                             fluidRow(
                                 plotOutput('plot'),
-                                column(5, DT::dataTableOutput('topFactor'))
+                                br(),
+                                br(),
+                                br(),
+                                column(5, 
+                                       box(height = 12, background = 'blue', title = 'Top 10 (x axis)'),
+                                       DT::dataTableOutput('topFactor')),
+                                column(2),
+                                column(5,
+                                       box(height = 12, background = 'blue', title = 'Top 10 (legend)'),
+                                       DT::dataTableOutput('topFill'))
                                 )
                             
                         
