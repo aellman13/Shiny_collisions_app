@@ -5,13 +5,33 @@ shinyUI(
         dashboardHeader(title = 'My Shiny Project'),
         
         dashboardSidebar(
-            sidebarMenu(menuItem(text = 'Collisions Map', tabName = 'map'),
-                        menuItem(text = 'Tables and Charts', tabName = 'chart'))),
+            sidebarMenu(menuItem(text = 'Home Page', tabName = 'welcome'),
+                        menuItem(text = 'Collisions Map', tabName = 'map'),
+                        menuItem(text = 'Tables and Charts', tabName = 'chart')
+                        )),
         
         dashboardBody(
             tabItems(
-                # Map page with input selectors
+                
+        # Welcome page
+                tabItem(tabName = 'welcome', h2('Traffic Collisions in NYC 2015-2016'),
+                                br(),
+                                br(),
+                                             h4('Vehicles in New York City are very dangerous and many times deadly. 
+                                               This Shiny web application allows the user to observe trends in vehicle-pedestrian, 
+                                               vehicle-cyclist and vehicle motorist accidents during 2015 through early 2017. The data
+                                                is filterd to show collisions either resulting in an injury or death. The data was 
+                                                provided by NYC OpenData and the NYPD'),
+                                br(),
+                                br(),
+                        
+                                            img(src='Freedman-Cycling.jpg', align = 'center')),
+                
+        # Map page with input selectors
                 tabItem(tabName = 'map',
+                        
+                        # Radio selector buttons for filtering by weekday, weekend, or all
+                        
                             column(4, radioButtons("radio_weekend", label = h3("Weekend or Weekday"),
                                                    choices = list("All" = "All", 
                                                                   "Weekday" = c('Weekday'), 
@@ -32,20 +52,18 @@ shinyUI(
                                                      end = "2015-12-28"),
                                     br(),
                                    
-                                        sliderInput("sample", label = 'Number of data points', min = 5000, max = 100000, value = 20000)),
+                                        sliderInput("sample", label = h3('Number of data points'), min = 5000, max = 100000, value = 20000)),
                                         
                                     box(width = 12, background = 'blue', height = 15),
                                     br(),
-                                    # actionButton("update" ,  
-                                    #                 label = HTML("Update map and center<br />around provided address"), 
-                                    #                 icon("refresh")),
+                                    
                                     leafletOutput('map', height = 600),
                         
                         box(width = 12, height = 15, background = 'blue')
                             
                         ),
                     
-                # Chart Pages with input selectors
+        # Chart Pages with input selectors
                 tabItem(tabName = 'chart',
                         
                             column(4, selectizeInput(inputId = "D_o_D", 
